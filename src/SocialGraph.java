@@ -37,7 +37,12 @@ public class SocialGraph {
         }
     }
     
-    public Map<Integer, List<String>> bfsLevels(String source) {
+    public Map<Integer, List<String>> bfsLevels(String source) {        
+        if (!adjacencyList.containsKey(source)) {
+            System.err.println("Error: User '" + source + "' not found in the social network.");
+            return Collections.emptyMap();
+        }
+        
         Map<Integer, List<String>> levels = new HashMap<>();
         Queue<String> queue = new LinkedList<>();
         Map<String, Boolean> visited = new HashMap<>();
@@ -74,4 +79,121 @@ public class SocialGraph {
 
         return levels; // Return distance levels
     }
+    
+    public List<String> getFriendsAtDistance(String source, int k) {
+        if (k < 0) {
+            System.err.println("Error: Distance k must be non-negative.");
+            return Collections.emptyList();
+        }
+
+        Map<Integer, List<String>> levels = bfsLevels(source);
+        return levels.getOrDefault(k, new ArrayList<>());
+    }
+    
+    public List<String> shortestPath(String source, String target) {
+        if (!adjacencyList.containsKey(source) || !adjacencyList.containsKey(target)) {
+            System.err.println("Error: One or both users not found in the network.");
+            return Collections.emptyList();
+        }
+
+        Map<String, String> parent = new HashMap<>();
+        Set<String> visited = new HashSet<>();
+        Queue<String> queue = new LinkedList<>();
+
+        queue.add(source);
+        visited.add(source);
+        parent.put(source, null);
+
+        // BFS loop
+        while (!queue.isEmpty()) {
+            String current = queue.poll();
+
+            if (current.equals(target)) {
+                break;
+            }
+
+            for (String neighbor : adjacencyList.get(current)) {
+                if (!visited.contains(neighbor)) {
+                    visited.add(neighbor);
+                    parent.put(neighbor, current);
+                    queue.add(neighbor);
+                }
+            }
+        }
+
+        // Reconstruct path
+        if (!parent.containsKey(target)) {
+            System.out.println("No path found between " + source + " and " + target);
+            return Collections.emptyList();
+        }
+
+        List<String> path = new LinkedList<>();
+        for (String at = target; at != null; at = parent.get(at)) {
+            path.add(0, at); // prepend to path
+        }
+
+        return path;
+    }
+
+    public boolean isGraphConnected() {
+        if (adjacencyList.isEmpty()) {
+            return true;
+        }
+
+        Set<String> visited = new HashSet<>();
+        Queue<String> queue = new LinkedList<>();
+
+        // Start BFS from any user
+        String startUser = adjacencyList.keySet().iterator().next();
+        queue.add(startUser);
+        visited.add(startUser);
+
+        while (!queue.isEmpty()) {
+            String current = queue.poll();
+            for (String neighbor : adjacencyList.get(current)) {
+                if (!visited.contains(neighbor)) {
+                    visited.add(neighbor);
+                    queue.add(neighbor);
+                }
+            }
+        }
+
+        // Check if all users were visited
+        return visited.size() == adjacencyList.size();
+    }
+    
+    public int countFriendGroups() {
+        Set<String> visited = new HashSet<>();
+        int groupCount = 0;
+
+        for (String user : adjacencyList.keySet()) {
+            if (!visited.contains(user)) {
+                bfsMarkVisited(user, visited);
+                groupCount++;
+            }
+        }
+
+        return groupCount;
+    }
+
+    // Helper method to mark all users in a group as visited
+    private void bfsMarkVisited(String startUser, Set<String> visited) {
+        Queue<String> queue = new LinkedList<>();
+        queue.add(startUser);
+        visited.add(startUser);
+
+        while (!queue.isEmpty()) {
+            String current = queue.poll();
+            for (String neighbor : adjacencyList.get(current)) {
+                if (!visited.contains(neighbor)) {
+                    visited.add(neighbor);
+                    queue.add(neighbor);
+                }
+            }
+        }
+    }
+
+
+
+
 }
